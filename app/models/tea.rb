@@ -1,2 +1,0 @@
-class Tea < ApplicationRecord
-end
