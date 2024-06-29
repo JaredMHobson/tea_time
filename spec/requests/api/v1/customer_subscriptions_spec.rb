@@ -12,10 +12,10 @@ RSpec.describe "CustomerSubscriptions", type: :request do
 
   describe "POST customer_subscription" do
     it 'creates a new customer_subscription when a valid customer id and subscription id is passed in the body of the request' do
-      cs_params = ({
+      cs_params = {
         customer_id: @customer1.id,
         subscription_id: @subscription4.id
-      })
+      }
 
       headers = {"CONTENT_TYPE" => "application/json"}
 
@@ -28,6 +28,31 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(created_cs.customer).to eq(@customer1)
       expect(created_cs.subscription).to eq(@subscription4)
       expect(created_cs.status).to eq("active")
+    end
+  end
+
+  describe "PATCH customer_subscription" do
+    it 'updates the customer subscription with the ID in the URI with the new status that is passed in the body and returns the customer subscription' do
+      cs1 = CustomerSubscription.create!(customer_id: @customer1.id, subscription_id: @subscription1.id)
+
+      expect(cs1.status).to eq('active')
+
+      cs_params = {
+        status: 'cancelled'
+      }
+
+      headers = {"CONTENT_TYPE" => "application/json"}
+
+      patch "/api/v1/customer_subscriptions/#{cs1.id}", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+      updated_cs1 = CustomerSubscription.find(cs1.id)
+
+      expect(response).to be_successful
+      expect(response.status).to eq 200
+      expect(updated_cs1.id).to eq(cs1.id)
+      expect(updated_cs1.status).to eq('cancelled')
+      expect(updated_cs1.customer).to eq(@customer1)
+      expect(updated_cs1.subscription).to eq(@subscription1)
     end
   end
 end
