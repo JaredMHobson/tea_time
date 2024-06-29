@@ -22,12 +22,93 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
 
       created_cs = CustomerSubscription.last
+      parsed_response = JSON.parse(response.body, symbolize_names: true)[:data]
 
       expect(response).to be_successful
       expect(response.status).to eq 201
       expect(created_cs.customer).to eq(@customer1)
       expect(created_cs.subscription).to eq(@subscription4)
       expect(created_cs.status).to eq("active")
+
+      expect(parsed_response[:attributes][:title]).to eq(@subscription4.title)
+      expect(parsed_response[:attributes][:price]).to eq(@subscription4.price)
+      expect(parsed_response[:attributes][:frequency]).to eq(@subscription4.frequency)
+    end
+
+    describe '#Sad Paths' do
+      it 'returns an appropriate error message if an invalid customer_id is passed' do
+        cs_params = {
+          customer_id: 123123123,
+          subscription_id: @subscription4.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq('Validation failed: Customer must exist')
+      end
+
+      it 'returns an appropriate error message if an invalid subscription_id is passed' do
+        cs_params = {
+          customer_id: @customer1.id,
+          subscription_id: 123123123
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq('Validation failed: Subscription must exist')
+      end
+
+      it 'returns an appropriate error message if no customer_id is passed' do
+        cs_params = {
+          subscription_id: @subscription4.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq("Validation failed: Customer must exist, Customer can't be blank")
+      end
+
+      it 'returns an appropriate error message if no subscription_id is passed' do
+        cs_params = {
+          customer_id: @customer1.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq("Validation failed: Subscription must exist, Subscription can't be blank")
+      end
     end
   end
 
@@ -54,6 +135,46 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(updated_cs1.customer).to eq(@customer1)
       expect(updated_cs1.subscription).to eq(@subscription1)
     end
+
+    describe '#Sad Paths' do
+      it 'returns an appropriate error message if an invalid customer_subscription_id is passed' do
+        cs_params = {
+          status: 'cancelled'
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        patch "/api/v1/customer_subscriptions/123123123", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 404
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('404')
+        expect(parsed_response[:errors].first[:title]).to eq("Couldn't find CustomerSubscription with 'id'=123123123")
+      end
+
+      it 'returns an appropriate error message if an invalid status is passed' do
+        cs1 = CustomerSubscription.create!(customer_id: @customer1.id, subscription_id: @subscription1.id)
+
+        cs_params = {
+          status: 'invalid status'
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        patch "/api/v1/customer_subscriptions/#{cs1.id}", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq("'invalid status' is not a valid status")
+      end
+    end
   end
 
   describe "GET all customer_subscriptions" do
@@ -72,10 +193,21 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(customer_subscriptions.count).to eq(3)
       expect(customer_subscriptions.first[:id]).to eq(cs1.id.to_s)
       expect(customer_subscriptions.first[:relationships][:subscription][:data][:id]).to eq(@subscription1.id.to_s)
+      expect(customer_subscriptions.first[:attributes][:title]).to eq(@subscription1.title)
+      expect(customer_subscriptions.first[:attributes][:price]).to eq(@subscription1.price)
+      expect(customer_subscriptions.first[:attributes][:frequency]).to eq(@subscription1.frequency)
+
       expect(customer_subscriptions.second[:id]).to eq(cs2.id.to_s)
       expect(customer_subscriptions.second[:relationships][:subscription][:data][:id]).to eq(@subscription3.id.to_s)
+      expect(customer_subscriptions.second[:attributes][:title]).to eq(@subscription3.title)
+      expect(customer_subscriptions.second[:attributes][:price]).to eq(@subscription3.price)
+      expect(customer_subscriptions.second[:attributes][:frequency]).to eq(@subscription3.frequency)
+
       expect(customer_subscriptions.last[:id]).to eq(cs3.id.to_s)
       expect(customer_subscriptions.last[:relationships][:subscription][:data][:id]).to eq(@subscription4.id.to_s)
+      expect(customer_subscriptions.last[:attributes][:title]).to eq(@subscription4.title)
+      expect(customer_subscriptions.last[:attributes][:price]).to eq(@subscription4.price)
+      expect(customer_subscriptions.last[:attributes][:frequency]).to eq(@subscription4.frequency)
 
       customer_subscriptions.each do |subscription|
         expect(subscription[:type]).to eq('customer_subscription')
@@ -135,6 +267,20 @@ RSpec.describe "CustomerSubscriptions", type: :request do
         expect(subscription[:relationships]).to have_key(:customer)
         expect(subscription[:relationships][:customer][:data][:id]).to eq(@customer1.id.to_s)
         expect(subscription[:relationships]).to have_key(:subscription)
+      end
+    end
+
+    describe '#Sad Paths' do
+      it 'returns an appropriate error message if an invalid customer_id is passed' do
+        get "/api/v1/customer_subscriptions/123123123"
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 404
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('404')
+        expect(parsed_response[:errors].first[:title]).to eq("Couldn't find Customer with 'id'=123123123")
       end
     end
   end
