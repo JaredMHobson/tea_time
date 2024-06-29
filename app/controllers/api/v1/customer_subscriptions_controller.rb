@@ -2,7 +2,13 @@ class Api::V1::CustomerSubscriptionsController < ApplicationController
   def index
     customer = Customer.find(params[:id])
 
-    render json: CustomerSubscriptionSerializer.new(customer.customer_subscriptions), status: 200
+    if params[:status] == 'active'
+      render json: CustomerSubscriptionSerializer.new(customer.customer_subscriptions.active), status: 200
+    elsif params[:status] == 'cancelled'
+      render json: CustomerSubscriptionSerializer.new(customer.customer_subscriptions.cancelled), status: 200
+    else
+      render json: CustomerSubscriptionSerializer.new(customer.customer_subscriptions), status: 200
+    end
   end
 
   def create
