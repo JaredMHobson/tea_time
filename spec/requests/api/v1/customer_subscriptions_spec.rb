@@ -22,12 +22,17 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
 
       created_cs = CustomerSubscription.last
+      parsed_response = JSON.parse(response.body, symbolize_names: true)[:data]
 
       expect(response).to be_successful
       expect(response.status).to eq 201
       expect(created_cs.customer).to eq(@customer1)
       expect(created_cs.subscription).to eq(@subscription4)
       expect(created_cs.status).to eq("active")
+
+      expect(parsed_response[:attributes][:title]).to eq(@subscription4.title)
+      expect(parsed_response[:attributes][:price]).to eq(@subscription4.price)
+      expect(parsed_response[:attributes][:frequency]).to eq(@subscription4.frequency)
     end
 
     describe '#Sad Paths' do
@@ -188,10 +193,21 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(customer_subscriptions.count).to eq(3)
       expect(customer_subscriptions.first[:id]).to eq(cs1.id.to_s)
       expect(customer_subscriptions.first[:relationships][:subscription][:data][:id]).to eq(@subscription1.id.to_s)
+      expect(customer_subscriptions.first[:attributes][:title]).to eq(@subscription1.title)
+      expect(customer_subscriptions.first[:attributes][:price]).to eq(@subscription1.price)
+      expect(customer_subscriptions.first[:attributes][:frequency]).to eq(@subscription1.frequency)
+
       expect(customer_subscriptions.second[:id]).to eq(cs2.id.to_s)
       expect(customer_subscriptions.second[:relationships][:subscription][:data][:id]).to eq(@subscription3.id.to_s)
+      expect(customer_subscriptions.second[:attributes][:title]).to eq(@subscription3.title)
+      expect(customer_subscriptions.second[:attributes][:price]).to eq(@subscription3.price)
+      expect(customer_subscriptions.second[:attributes][:frequency]).to eq(@subscription3.frequency)
+
       expect(customer_subscriptions.last[:id]).to eq(cs3.id.to_s)
       expect(customer_subscriptions.last[:relationships][:subscription][:data][:id]).to eq(@subscription4.id.to_s)
+      expect(customer_subscriptions.last[:attributes][:title]).to eq(@subscription4.title)
+      expect(customer_subscriptions.last[:attributes][:price]).to eq(@subscription4.price)
+      expect(customer_subscriptions.last[:attributes][:frequency]).to eq(@subscription4.frequency)
 
       customer_subscriptions.each do |subscription|
         expect(subscription[:type]).to eq('customer_subscription')
