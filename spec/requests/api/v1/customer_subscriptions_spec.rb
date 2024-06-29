@@ -55,4 +55,35 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(updated_cs1.subscription).to eq(@subscription1)
     end
   end
+
+  describe "GET all customer_subscriptions" do
+    it 'returns all customer_subscriptions for the customer_id passed in the uri' do
+      cs1 = CustomerSubscription.create!(customer_id: @customer1.id, subscription_id: @subscription1.id)
+      cs2 = CustomerSubscription.create!(customer_id: @customer1.id, subscription_id: @subscription3.id)
+      cs3 = CustomerSubscription.create!(customer_id: @customer1.id, subscription_id: @subscription4.id)
+
+      get "/api/v1/customer_subscriptions/#{@customer1.id}"
+
+      customer_subscriptions = JSON.parse(response.body, symbolize_names: true)[:data]
+
+      expect(response).to be_successful
+      expect(response.status).to eq 200
+
+      expect(customer_subscriptions.count).to eq(3)
+      expect(customer_subscriptions.first[:id]).to eq(cs1.id.to_s)
+      expect(customer_subscriptions.first[:relationships][:subscription][:data][:id]).to eq(@subscription1.id.to_s)
+      expect(customer_subscriptions.second[:id]).to eq(cs2.id.to_s)
+      expect(customer_subscriptions.second[:relationships][:subscription][:data][:id]).to eq(@subscription3.id.to_s)
+      expect(customer_subscriptions.last[:id]).to eq(cs3.id.to_s)
+      expect(customer_subscriptions.last[:relationships][:subscription][:data][:id]).to eq(@subscription4.id.to_s)
+
+      customer_subscriptions.each do |subscription|
+        expect(subscription[:type]).to eq('customer_subscription')
+        expect(subscription[:attributes][:status]).to eq('active')
+        expect(subscription[:relationships]).to have_key(:customer)
+        expect(subscription[:relationships][:customer][:data][:id]).to eq(@customer1.id.to_s)
+        expect(subscription[:relationships]).to have_key(:subscription)
+      end
+    end
+  end
 end
