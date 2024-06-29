@@ -29,6 +29,82 @@ RSpec.describe "CustomerSubscriptions", type: :request do
       expect(created_cs.subscription).to eq(@subscription4)
       expect(created_cs.status).to eq("active")
     end
+
+    describe '#Sad Paths' do
+      it 'returns an appropriate error message if an invalid customer_id is passed' do
+        cs_params = {
+          customer_id: 123123123,
+          subscription_id: @subscription4.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq('Validation failed: Customer must exist')
+      end
+
+      it 'returns an appropriate error message if an invalid subscription_id is passed' do
+        cs_params = {
+          customer_id: @customer1.id,
+          subscription_id: 123123123
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq('Validation failed: Subscription must exist')
+      end
+
+      it 'returns an appropriate error message if no customer_id is passed' do
+        cs_params = {
+          subscription_id: @subscription4.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq("Validation failed: Customer must exist, Customer can't be blank")
+      end
+
+      it 'returns an appropriate error message if no subscription_id is passed' do
+        cs_params = {
+          customer_id: @customer1.id
+        }
+
+        headers = {"CONTENT_TYPE" => "application/json"}
+
+        post "/api/v1/customer_subscriptions", headers: headers, params: JSON.generate(customer_subscription: cs_params)
+
+        parsed_response = JSON.parse(response.body, symbolize_names: true)
+
+        expect(response).to_not be_successful
+        expect(response.status).to eq 422
+        expect(parsed_response).to have_key(:errors)
+        expect(parsed_response[:errors].first[:status]).to eq('422')
+        expect(parsed_response[:errors].first[:title]).to eq("Validation failed: Subscription must exist, Subscription can't be blank")
+      end
+    end
   end
 
   describe "PATCH customer_subscription" do
