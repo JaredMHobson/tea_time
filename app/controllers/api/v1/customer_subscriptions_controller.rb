@@ -1,4 +1,10 @@
 class Api::V1::CustomerSubscriptionsController < ApplicationController
+  def index
+    customer = Customer.find(params[:id])
+
+    render json: CustomerSubscriptionSerializer.new(customer.customer_subscriptions), status: 200
+  end
+
   def create
     customer_subscription = CustomerSubscription.new(cs_params)
     customer_subscription.save!
