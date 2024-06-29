@@ -1,4 +1,4 @@
-class Api::V1::Subscription < ApplicationRecord
+class Subscription < ApplicationRecord
   enum status: [ :disabled, :enabled ]
 
   has_many :customer_subscriptions

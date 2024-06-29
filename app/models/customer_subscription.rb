@@ -1,4 +1,4 @@
-class Api::V1::CustomerSubscription < ApplicationRecord
+class CustomerSubscription < ApplicationRecord
   enum status: [ :cancelled, :active ]
 
   belongs_to :customer

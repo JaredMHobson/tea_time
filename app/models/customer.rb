@@ -1,4 +1,4 @@
-class Api::V1::Customer < ApplicationRecord
+class Customer < ApplicationRecord
   has_many :customer_subscriptions
   has_many :subscriptions, through: :customer_subscriptions
 
