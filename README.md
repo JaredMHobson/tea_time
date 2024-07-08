@@ -1,4 +1,4 @@
-# The Sunken Isles First Mate
+# Tea Time
 
 ## Table of Contents
 - [Getting Started](#getting-started)
